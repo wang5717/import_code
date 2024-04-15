@@ -16,8 +16,11 @@
 # https://github.com/NVIDIA/TensorRT/blob/release/10.0/samples/python/efficientdet/build_engine.py
 
 import os
+
 import tensorrt as trt
+
 from ultralytics.utils import LOGGER
+
 
 # https://docs.nvidia.com/deeplearning/tensorrt/api/python_api/infer/Int8/MinMaxCalibrator.html#tensorrt.IInt8MinMaxCalibrator
 # class EngineCalibrator(trt.IInt8EntropyCalibrator2):
@@ -35,6 +38,7 @@ class EngineCalibrator(trt.IInt8MinMaxCalibrator):
         self.cache_file = cache_file
         self.batch_generator = None
         from ultralytics import YOLO
+
         if cache_file is None or not os.path.exists(cache_file):
             self.BasePredictor = YOLO()._smart_load(key="predictor")(overrides=args, _callbacks=None)
             self.BasePredictor.setup_model(yolo_model)
