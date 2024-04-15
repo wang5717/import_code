@@ -708,9 +708,54 @@ class Exporter:
             config.add_optimization_profile(profile)
 
         half = builder.platform_has_fast_fp16 and self.args.half
-        LOGGER.info(f"{prefix} building FP{16 if half else 32} engine as {f}")
+        int8 = builder.platform_has_fast_int8 and self.args.int8
+        mix_precision = half and int8
+        if mix_precision:
+            # https://github.com/NVIDIA/TensorRT/tree/main/samples/python/efficientdet
+            """
+            Experimental precision mode.
+
+            Enable mixed-precision mode. When set, the layers defined here will be forced to FP16 to maximize INT8
+            inference accuracy, while having minimal impact on latency.
+            """
+            config.set_flag(trt.BuilderFlag.PREFER_PRECISION_CONSTRAINTS)
+            config.set_flag(trt.BuilderFlag.DIRECT_IO)
+            config.set_flag(trt.BuilderFlag.REJECT_EMPTY_ALGORITHMS)
+
+            # All convolution operations in the first two convolution and last one covolution of the graph
+            # are pinned to FP16. These layers have been manually chosen as they give a good middle-point between int8 and fp16
+            # accuracy in COCO, while maintining almost the same latency as a normal int8 engine.
+            # To experiment with other datasets, or a different balance between accuracy/latency, you may
+            # add or remove blocks.
+            first_conv = 0
+            last_conv = 0
+            for i in range(network.num_layers):
+                layer = network.get_layer(i)
+                if layer.type == trt.LayerType.CONVOLUTION:
+                    if first_conv < 2:
+                        first_conv += 1
+                        network.get_layer(i).precision = trt.DataType.HALF
+                        LOGGER.info("Mixed-Precision Layer {} set to HALF STRICT data type".format(layer.name))
+                    last_conv = layer
+            last_conv.precision = trt.DataType.HALF
+            LOGGER.info("Mixed-Precision Layer {} set to HALF STRICT data type".format(last_conv.name))
+            LOGGER.info(f"{prefix} building a Mix Precision with FP16 and INT8 engine as {f}")
         if half:
+            LOGGER.info(f"{prefix} building FP16 engine as {f}")
             config.set_flag(trt.BuilderFlag.FP16)
+        if int8:
+            # https://github.com/NVIDIA/TensorRT/tree/main/samples/python/efficientdet
+            LOGGER.info(f"{prefix} building INT8 engine as {f}")
+            from ultralytics.nn.calibrator import EngineCalibrator
+
+            """
+            https://docs.nvidia.com/deeplearning/tensorrt/developer-guide/#enable_int8_c
+            To avoid this issue, calibrate with as large a single batch as possible, 
+            and ensure that calibration batches are well randomized and have similar distribution.
+            """
+            cache_file = str(self.file.with_suffix(".cache"))
+            config.set_flag(trt.BuilderFlag.INT8)
+            config.int8_calibrator = EngineCalibrator(cache_file, self.args, self.model)
 
         # Free CUDA memory
         del self.model
