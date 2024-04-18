@@ -168,30 +168,36 @@ Export a YOLOv8n model to a different format like ONNX, CoreML, etc.
         yolo export model=path/to/best.pt format=onnx
         ```
 
-Export a YOLOv8n model to TensorRT INT8 format or Mix precision format.
+Export a YOLOv8n model to TensorRT INT8 format.
 
-1. prepare the calibration dataset, your own training dataset is the best or [coco 2017](http://images.cocodataset.org/zips/val2017.zip) and unzip. the number of calibration dataset should be larger than 3000.
+1. prepare the calibration dataset, your own training dataset is the best or [coco 2017](http://images.cocodataset.org/zips/val2017.zip) and unzip. the number of calibration dataset should be larger than 600.
 
-2. INT8: half=False, int8=True
+2. INT8: int8=True
 
-3. Mix Precision: half=True, int8=True
+!!! Example
 
-!!! Example "Example"
+    === "Python"
 
-    === "Official"
+        ```python
+        from ultralytics import YOLO
 
-        Export an official YOLOv8n model to a INT8 or Mix precision Tensorrt format.
-        ```bash
-        yolo export model=yolov8n.pt format=onnx source='E:\val2017' calib_batch=20 half=True int8=True  # Mix precision
-        yolo export model=yolov8n.pt format=onnx source='E:\val2017' calib_batch=20 half=False int8=True  # INT8
+        # Load a model
+        model = YOLO('yolov8n.pt')  # load an official model
+        model = YOLO('path/to/best.pt')  # load a custom trained model
+
+        # Export the model
+        calib_input = r'E:\val2017'
+        calib_input = "your training dataset images directory"
+        imgsz = 640
+        model.export(format=r"engine", source = calib_input, calib_batch=20, 
+                     simplify=True, int8=True,
+                     imgsz=imgsz) # INT8
         ```
+    === "CLI"
 
-    === "Custom"
-
-        Export a custom-trained model to a INT8 or Mix precision Tensorrt format.
         ```bash
-        yolo export model=path/to/best.pt format=onnx  source="your training dataset images directory" calib_batch=20 half=True int8=True # Mix precision
-        yolo export model=path/to/best.pt format=onnx  source="your training dataset images directory" calib_batch=20 half=False int8=True # INT8
+        yolo export model=yolov8n.pt format=engine source='E:\val2017' calib_batch=20 int8=True # export official model to INT8
+        yolo export model=path/to/best.pt format=engine source="your training dataset images directory" calib_batch=20 int8=True # export custom trained model to INT8
         ```
 
 Available YOLOv8 export formats are in the table below. You can export to any format using the `format` argument, i.e. `format='onnx'` or `format='engine'`.

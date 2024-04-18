@@ -71,14 +71,11 @@ Export a YOLOv8n model to a different format like ONNX or TensorRT. See Argument
         ```
 
 
-Export a YOLOv8n model to TensorRT INT8 format or Mix precision format. See Arguments section below for a full list of export arguments.
+Export a YOLOv8n model to TensorRT INT8 format format. See Arguments section below for a full list of export arguments.
 
-1. prepare the calibration dataset, your own training dataset is the best or [coco 2017](http://images.cocodataset.org/zips/val2017.zip) and unzip. the number of calibration dataset should be larger than 3000.
+1. prepare the calibration dataset, your own training dataset is the best or [coco 2017](http://images.cocodataset.org/zips/val2017.zip) and unzip. the number of calibration dataset should be larger than 600.
 
-2. INT8: half=False, int8=True
-
-3. Mix Precision: half=True, int8=True
-
+2. INT8: int8=True
 
 !!! Example
 
@@ -96,19 +93,14 @@ Export a YOLOv8n model to TensorRT INT8 format or Mix precision format. See Argu
         calib_input = "your training dataset images directory"
         imgsz = 640
         model.export(format=r"engine", source = calib_input, calib_batch=20, 
-                     simplify=True, half=True, int8=True,
-                     imgsz=imgsz) # Mix precision
-        model.export(format=r"engine", source = calib_input, calib_batch=20, 
-                     simplify=True, half=False, int8=True,
+                     simplify=True, int8=True,
                      imgsz=imgsz) # INT8
         ```
     === "CLI"
 
         ```bash
-        yolo export model=yolov8n.pt format=engine source='E:\val2017' calib_batch=20 half=True int8=True # export official model to Mix precision
-        yolo export model=yolov8n.pt format=engine source='E:\val2017' calib_batch=20 half=False int8=True # export official model to INT8
-        yolo export model=path/to/best.pt format=engine source="your training dataset images directory" calib_batch=20 half=True int8=True # export custom trained model to Mix precision
-        yolo export model=path/to/best.pt format=engine source="your training dataset images directory" calib_batch=20 half=False int8=True # export custom trained model to INT8
+        yolo export model=yolov8n.pt format=engine source='E:\val2017' calib_batch=20 int8=True # export official model to INT8
+        yolo export model=path/to/best.pt format=engine source="your training dataset images directory" calib_batch=20 int8=True # export custom trained model to INT8
         ```
 
 ## Arguments
@@ -123,7 +115,7 @@ This table details the configurations and options available for exporting YOLO m
 | `optimize`  | `bool`           | `False`         | Applies optimization for mobile devices when exporting to TorchScript, potentially reducing model size and improving performance.                                |
 | `half`      | `bool`           | `False`         | Enables FP16 (half-precision) quantization, reducing model size and potentially speeding up inference on supported hardware.                                     |
 | `int8`      | `bool`           | `False`         | Activates INT8 quantization, further compressing the model and speeding up inference with minimal accuracy loss, primarily for edge devices.                     |
-| `calib_batch`      | `int`           | `20`         | when using INT8 quantization or mix precision quantization in tensorrt, determinate the calibration images batch size, not the onnx input batch.                     |
+| `calib_batch`      | `int`           | `20`         | when using INT8 quantization in tensorrt, determinate the calibration images batch size, not the onnx input batch.                     |
 | `dynamic`   | `bool`           | `False`         | Allows dynamic input sizes for ONNX and TensorRT exports, enhancing flexibility in handling varying image dimensions.                                            |
 | `simplify`  | `bool`           | `False`         | Simplifies the model graph for ONNX exports, potentially improving performance and compatibility.                                                                |
 | `opset`     | `int`            | `None`          | Specifies the ONNX opset version for compatibility with different ONNX parsers and runtimes. If not set, uses the latest supported version.                      |
